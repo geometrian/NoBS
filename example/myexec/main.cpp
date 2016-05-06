@@ -1,5 +1,8 @@
 #include "main.h"
 
+#include <cstdio>
+#include <cstdlib>
+
 
 int main(int argc, char* argv[]) {
 	if        (argc!=2) {
@@ -9,6 +12,8 @@ int main(int argc, char* argv[]) {
 		int x_sq = mylib::square(x);
 		printf("%d\n",x_sq);
 	}
+	printf("ENTER to exit.\n");
+	getchar();
 
 	return 0;
 }

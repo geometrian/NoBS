@@ -3,20 +3,8 @@ import os
 from . import _helpers
 from ._architecture import Architecture
 from ._build_options import BuildOptions
-from ._platform import Platform
+from . import _platform
 from ._target import _TargetBase
-
-
-def generate(project):
-    project._validate_basic()
-    
-    for platform in project.platforms:
-        if   platform.type == Platform.  LINUX:
-            pass
-        elif platform.type == Platform.WINDOWS:
-            _generate_msvc2015(project)
-        else:
-            raise NotImplementedError()
 
 
 def _generate_msvc2015(project):
@@ -27,7 +15,7 @@ def _generate_msvc2015(project):
 
     found = False
     for platform in project.platforms:
-        if platform.type == Platform.WINDOWS:
+        if platform.type == _platform.Platform.WINDOWS:
             found = True
             break
     if not found:
@@ -69,14 +57,15 @@ def _generate_msvc2015_sln(project):
 
     configs = []
     for platform in project.platforms:
-        if platform.type == Platform.WINDOWS:
+        if platform.type == _platform.Platform.WINDOWS:
             for config in platform.configurations:
                 configs.append(config)
 
     data =\
     """Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25123.0
-MinimumVisualStudioVersion = 10.0.40219.1"""
+MinimumVisualStudioVersion = 10.0.40219.1
+"""
     for target in project.targets:
         #Project specification.
         #   See http://stackoverflow.com/a/2328668/688624
@@ -100,22 +89,24 @@ MinimumVisualStudioVersion = 10.0.40219.1"""
             if dep in project.targets:
                 deps_salient.append(dep)
         if len(deps_salient) > 0:
-            data += "\tProjectSection(ProjectDependencies) = postProject"
+            data += "\tProjectSection(ProjectDependencies) = postProject\n"
             for dep in sorted(list(deps_salient)):
                 data += "\t\t{"+dep.uuid+"} = {"+dep.uuid+"}\n"
-            data += "\tEndProjectSection"
+            data += "\tEndProjectSection\n"
         data += "EndProject\n"
     data += """Global
-GlobalSection(SolutionConfigurationPlatforms) = preSolution"""
+\tGlobalSection(SolutionConfigurationPlatforms) = preSolution
+"""
     for config in configs:
         data += "\t\t"+config._get_msvc_name()+" = "+config._get_msvc_name()+"\n"
         #\t\tdebug|Win32 = debug|Win32
-    data += "\tEndGlobalSection\nGlobalSection(ProjectConfigurationPlatforms) = postSolution"
-    for config in configs:
-        msvc_name = config._get_msvc_name()
-        data +=\
-            "\t\t{"+target.uuid+"}."+msvc_name+".ActiveCfg = "+msvc_name+"\n" +\
-            "\t\t{"+target.uuid+"}."+msvc_name+".Build.0   = "+msvc_name+"\n"
+    data += "\tEndGlobalSection\n\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n"
+    for target in project.targets:
+        for config in configs:
+            msvc_name = config._get_msvc_name()
+            data +=\
+                "\t\t{"+target.uuid+"}."+msvc_name+".ActiveCfg = "+msvc_name+"\n" +\
+                "\t\t{"+target.uuid+"}."+msvc_name+".Build.0   = "+msvc_name+"\n"
     data += """\tEndGlobalSection
 \tGlobalSection(SolutionProperties) = preSolution
 \t\tHideSolutionNode = FALSE
@@ -123,101 +114,101 @@ GlobalSection(SolutionConfigurationPlatforms) = preSolution"""
 EndGlobal
 """
 
-    file = open(project.name+".sln","w")
+    file = open(os.path.join(project.build_files_directory.abspath,project.name+".sln"),"w")
     file.write(data)
     file.close()
 
 def _generate_msvc2015_vcxproj(project,target):
     configs = []
     for platform in project.platforms:
-        if platform.type == Platform.WINDOWS:
+        if platform.type == _platform.Platform.WINDOWS:
             for config in platform.configurations:
                 if target.configurations == None or config in target.configurations:
                     configs.append(config)
-    
-    #Note: the value for xmlns is different from MSVC's default, which is a dead link.
+
+    #Note: the value for xmlns must be the dead link "http://schemas.microsoft.com/developer/msbuild/2003",
+    #   not the more sensible https://msdn.microsoft.com/en-us/library/5dy88c2e.aspx
     data = """<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="https://msdn.microsoft.com/en-us/library/5dy88c2e.aspx">
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 \t<ItemGroup Label="ProjectConfigurations">"""
     for config in configs:
         data += """
 \t\t<ProjectConfiguration Include="%s">
 \t\t\t<Configuration>%s</Configuration>
 \t\t\t<Platform>%s</Platform>
-\t\t</ProjectConfiguration>""" % (config._get_msvc_name(),config.name,config._get_msvc_arch())
+\t\t</ProjectConfiguration>""" % (config._get_msvc_configplat(),config.name,config._get_msvc_arch())
     data += """
 \t</ItemGroup>
 \t<PropertyGroup Label="Globals">
 \t\t<ProjectGuid>{%s}</ProjectGuid>
 \t\t<Keyword>Win32Proj</Keyword>
-\t\t<RootNamespace>FooAppl</RootNamespace>
+\t\t<RootNamespace>%s</RootNamespace>
 \t\t<WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
 \t\t<CharacterSet>Unicode</CharacterSet>
 \t</PropertyGroup>
-\t<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>""" % (target.uuid)
+\t<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+""" % (target.uuid,target.name)
     for config in configs:
-        data += """
-\t<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='%s'" Label="Configuration">
+        data += """\t<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='%s'" Label="Configuration">
 \t\t<ConfigurationType>%s</ConfigurationType>
 \t\t<UseDebugLibraries>%s</UseDebugLibraries>
 \t\t<PlatformToolset>%s</PlatformToolset>
-\t</PropertyGroup>
-\t<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
-\t<ImportGroup Label="ExtensionSettings"/>""" % (
-            config._get_msvc_name(),
-            target._get_msvc_type(),
-            "true" if config.build_options.is_debug else "false",
-            config.toolchain._get_msvc_name()
-        )
+\t</PropertyGroup>\n""" % (
+        config._get_msvc_configplat(),
+        target._get_msvc_type(),
+        "true" if config.build_options.is_debug else "false",
+        config.toolchain._get_msvc_name()
+    )
+    data += """\t<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+\t<ImportGroup Label="ExtensionSettings"/>"""
     for config in configs:
         data += """
 \t<ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='%s'">
 \t\t<Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-\t</ImportGroup>""" % (config._get_msvc_name())
+\t</ImportGroup>""" % (config._get_msvc_configplat())
     data += """
-\t<PropertyGroup Label="UserMacros"/>"""
+\t<PropertyGroup Label="UserMacros"/>
+"""
 
     dirs_inc = []
     dirs_lib = []
     dep_libs = []
-    for dependency in target._get_flattened_dependencies_list():
-        dirs_inc += dependency.dirs_inc_provided
-        dirs_lib += dependency.dir_lib_provided
-        dep_libs += dependency.name + ".lib"
-    if len(dirs_inc) > 0:
-        inc_str = "\t\t<IncludePath>".join([inc+";" for inc in dirs_inc])+"$(IncludePath)</IncludePath>\n"
-    else:
-        inc_str = ""
-    if len(dirs_lib) > 0:
-        lib_str = "\t\t<LibraryPath>".join([lib+";" for lib in dirs_lib])+"$(LibraryPath)</LibraryPath>\n"
-    else:
-        lib_str = ""
+    for dep in target._get_flattened_dependencies_list():
+        dirs_inc += [
+            os.path.relpath(incl.abspath,project.build_files_directory.abspath)
+            for incl in dep.exported.dirs_incl_list
+        ]
+        dirs_lib += [ _helpers._reslash(
+            os.path.relpath( dep.project.build_result_directory.abspath, project.build_files_directory.abspath ) + "\\"
+        ) ]
+        dep_libs += [ dep.name + ".lib" ]
     
     for config in configs:
-        data += """
-\t<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='%s'">""" % (config._get_msvc_name())
+        data += """\t<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='%s'">""" % (config._get_msvc_configplat())
         if target.type == _TargetBase.EXECUTABLE:
             data += """
 \t\t<LinkIncremental>true</LinkIncremental>"""
         data += """
 \t\t<OutDir>%s</OutDir>
-\t\t<IntDir>%s</IntDir>""" % (
-            project.build_result_directory.relpath+config.name+"/",
-            project.build_temporary_directory.relpath+config.name+"/"
+\t\t<IntDir>%s</IntDir>
+""" % (
+            _helpers._reslash( os.path.relpath(project.build_result_directory.relpath+config.name_build,project.build_files_directory.abspath) + "\\" ),
+            _helpers._reslash( os.path.relpath(project.build_temporary_directory.relpath+config.name_build+"/"+target.name,project.build_files_directory.abspath) + "\\" )
         )
-        data += inc_str
-        data += lib_str
-        data += """
-\t</PropertyGroup>"""
+        if len(dirs_inc) > 0:
+            data += "\t\t<IncludePath>"+"".join([inc+";" for inc in dirs_inc])+"$(IncludePath)</IncludePath>\n"
+        if len(dirs_lib) > 0:
+            data += "\t\t<LibraryPath>"+"".join([lib+config.name_build+"/;" for lib in dirs_lib])+"$(LibraryPath)</LibraryPath>\n"
+        data += """\t</PropertyGroup>
+"""
 
     for config in configs:
-        data += """
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='%s'">
-    <ClCompile>
-      <PrecompiledHeader>"""+("Use" if target.pch!=None else "NotUsing")+"""</PrecompiledHeader>
+        data += "\t<ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='"+config._get_msvc_configplat()+"""'">
+\t\t<ClCompile>
+\t\t\t<PrecompiledHeader>"""+("Use" if target.pch!=None else "NotUsing")+"""</PrecompiledHeader>
 \t\t\t<Optimization>"""+("Disabled","MaxSpeed")[config.build_options.optimization]+"""</Optimization>
-      <WarningLevel>Level3</WarningLevel>
-      <PreprocessorDefinitions>"""
+\t\t\t<WarningLevel>Level3</WarningLevel>
+\t\t\t<PreprocessorDefinitions>"""
         for define in config.build_options.defines:
             data += define.symbol
             if define.value!=None: data+="="+define.value
@@ -243,16 +234,15 @@ def _generate_msvc2015_vcxproj(project,target):
                 data += "\t\t\t<EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>\n"
             else: pass
         if len(config.toolchain.additional_build_options) > 0:
-            data += "\t\t\t<AdditionalOptions>".join([opt+" " for opt in config.toolchain.additional_build_options])+"%(AdditionalOptions)</AdditionalOptions>\n"
+            data += "\t\t\t<AdditionalOptions>"+"".join([opt+" " for opt in config.toolchain.additional_build_options])+"%(AdditionalOptions)</AdditionalOptions>\n"
         data += """\t\t</ClCompile>
 \t\t<Link>
 """
         if config.build_options.with_symbols:
             data += "\t\t\t<GenerateDebugInformation>Debug</GenerateDebugInformation>\n"
         if len(dep_libs) > 0:
-            data += "\t\t\t<AdditionalDependencies>".join([dep+";" for dep in dep_libs])+"%(AdditionalDependencies)</AdditionalDependencies>\n"
-        data += """
-\t\t</Link>
+            data += "\t\t\t<AdditionalDependencies>"+"".join([dep+";" for dep in dep_libs])+"%(AdditionalDependencies)</AdditionalDependencies>\n"
+        data += """\t\t</Link>
 \t</ItemDefinitionGroup>
 """
 
@@ -260,21 +250,29 @@ def _generate_msvc2015_vcxproj(project,target):
     if len(files) > 0:
         data += "\t<ItemGroup>\n"
         for file in files:
-            path = os.path.relpath(file.abspath,project.build_files_directory.abspath)
-            data += "\t\t<ClInclude Include=\""+path+"\""
+            relpath = _helpers._reslash( os.path.relpath(file.abspath,project.build_files_directory.abspath) )
             if target.pch != None and path == target.pch[1]:
-                data += ">\n\t\t\t<PrecompiledHeader>Create</PrecompiledHeader>\n"
+                if file.is_header:
+                    data += "\t\t<ClInclude Include=\""+relpath+"\">\n\t\t\t<PrecompiledHeader>Create</PrecompiledHeader>\t\t</ClInclude>\n"
+                elif file.is_source:
+                    data += "\t\t<ClCompile Include=\""+relpath+"\">\n\t\t\t<PrecompiledHeader>Create</PrecompiledHeader>\t\t</ClCompile>\n"
+                else:
+                    data += "\t\t<Text Include=\""+relpath+"\">\n\t\t\t<PrecompiledHeader>Create</PrecompiledHeader>\t\t</Text>\n"
             else:
-                data += "/>\n"
+                if file.is_header:
+                    data += "\t\t<ClInclude Include=\""+relpath+"\"/>\n"
+                elif file.is_source:
+                    data += "\t\t<ClCompile Include=\""+relpath+"\"/>\n"
+                else:
+                    data += "\t\t<Text Include=\""+relpath+"\"/>\n"
         data += "\t</ItemGroup>\n"
 
-    data += """
-\t<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+    data += """\t<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
 \t<ImportGroup Label="ExtensionTargets"/>
 </Project>
 """
 
-    file = open(target.name+".vcxproj","w")
+    file = open(os.path.join(project.build_files_directory.abspath,target.name+".vcxproj"),"w")
     file.write(data)
     file.close()
 
@@ -286,9 +284,10 @@ def _generate_msvc2015_vcxprojfilters(project,target):
         if file.absdir not in folders: folders.append(file.absdir)
     folders = sorted(folders)
     
-    #Note: the value for xmlns is different from MSVC's default, which is a dead link.
+    #Note: the value for xmlns must be the dead link "http://schemas.microsoft.com/developer/msbuild/2003",
+    #   not the more sensible https://msdn.microsoft.com/en-us/library/5dy88c2e.aspx
     data = """<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" xmlns="https://msdn.microsoft.com/en-us/library/5dy88c2e.aspx">
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 \t<ItemGroup>
 """
     for folder in folders:
@@ -297,7 +296,7 @@ def _generate_msvc2015_vcxprojfilters(project,target):
 ##        print("abspath")
 ##        print(project.build_files_directory.abspath)
 ##        print("done")
-        relpath = os.path.relpath(folder,project.build_files_directory.abspath)
+        relpath = _helpers._reslash( os.path.relpath(folder,project.build_files_directory.abspath) )
         data += "\t\t<Filter Include=\""+relpath+"""\">
 \t\t\t<UniqueIdentifier>{"""+_helpers._get_uuid(relpath)+"""}</UniqueIdentifier>
 \t\t</Filter>
@@ -307,8 +306,8 @@ def _generate_msvc2015_vcxprojfilters(project,target):
 """
 
     for file in files:
-        relpath = os.path.relpath(file.abspath,project.build_files_directory.abspath)
-        reldir = os.path.relpath(file.absdir,project.build_files_directory.abspath)
+        relpath = _helpers._reslash( os.path.relpath(file.abspath,project.build_files_directory.abspath) )
+        reldir = _helpers._reslash( os.path.relpath(file.absdir,project.build_files_directory.abspath) )
         if file.is_header:
             data += "\t\t<ClInclude Include=\""+relpath+"""\">
 \t\t\t<Filter>"""+reldir+"""</Filter>
@@ -328,7 +327,9 @@ def _generate_msvc2015_vcxprojfilters(project,target):
     data += """\t</ItemGroup>
 </Project>"""
 
-
+    file = open(os.path.join(project.build_files_directory.abspath,target.name+".vcxproj.filters"),"w")
+    file.write(data)
+    file.close()
 
 
 

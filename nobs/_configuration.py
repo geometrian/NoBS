@@ -1,12 +1,19 @@
 from ._architecture import Architecture
 from ._build_options import BuildOptions
+from . import _platform #different to resolve circ import
 from ._toolchain import Toolchain
 
 
 class Configuration(object):
-    def __init__(self, name, build_options, toolchain, architecture):
+    def __init__(self, platform, name, name_build, build_options, toolchain, architecture):
+        if not isinstance(platform,_platform.Platform): raise Exception("Platform must be an instance of \"nobs.Platform\"!")
+        platform.configurations.append(self)
+        
         if not isinstance(name,str): raise Exception("Configuration name must be a string!")
         self.name = name
+
+        if not isinstance(name_build,str): raise Exception("Configuration build name must be a string!")
+        self.name_build = name_build
 
         if not isinstance(build_options,BuildOptions): raise Exception("Configuration build options must be an instance of \"nobs.BuildOptions\"!")
         self.build_options = build_options
@@ -22,10 +29,16 @@ class Configuration(object):
         self.toolchain._validate_basic()
         self.architecture._validate_basic()
 
+    def _get_msvc_configplat(self):
+        #Return something like "debug|Win32"
+        return "%s|%s" % (
+            self.name,
+            ["Win32","x64","ARM"][int(self.architecture.type)]
+        )
     def _get_msvc_name(self):
         #Return something like "debug|x86".
         return "%s|%s" % (
-            ["debug","release"][int(self.build_options.is_debug)],
+            self.name,
             ["x86","x64","ARM"][int(self.architecture.type)]
         )
     def _get_msvc_arch(self):

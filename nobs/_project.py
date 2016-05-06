@@ -1,5 +1,6 @@
 from ._file import Directory
-from ._platform import Platform
+from ._generate import _generate_msvc2015
+from . import _platform
 from ._target import _TargetUserBase
 
 
@@ -8,21 +9,16 @@ class Project(object):
         if not isinstance(name,str): raise Exception("Project name must be a string!")
         self.name = name
 
+        if not isinstance(build_result_dir,Directory): raise Exception("Build result directory must be an instance of \"nobs.Directory\"!")
         self.build_result_directory    = build_result_dir
+        if not isinstance(build_temp_dir,Directory): raise Exception("Build temporary directory must be an instance of \"nobs.Directory\"!")
         self.build_temporary_directory = build_temp_dir
+        if not isinstance(build_files_dir,Directory): raise Exception("Build files directory must be an instance of \"nobs.Directory\"!")
         self.build_files_directory     = build_files_dir
-        if not isinstance(self.build_result_directory,Directory): raise Exception("Build result directory must be an instance of \"nobs.Directory\"!")
-        if not isinstance(self.build_temporary_directory,Directory): raise Exception("Build temporary directory must be an instance of \"nobs.Directory\"!")
-        if not isinstance(self.build_files_directory,Directory): raise Exception("Build files directory must be an instance of \"nobs.Directory\"!")
 
         self.platforms = []
 
         self.targets = []
-
-    def add_platform(self, platform):
-        if not isinstance(platform,Platform):
-            raise Exception("Platform must be an instance of \"nobs.Platform\"!")
-        self.platforms.append(platform)
 
     def add_target(self, target):
         if not isinstance(target,_TargetUserBase):
@@ -34,3 +30,14 @@ class Project(object):
             platform._validate_basic()
         for target in self.targets:
             target._validate_basic()
+
+    def generate(self):
+        self._validate_basic()
+    
+        for platform in self.platforms:
+            if   platform.type == _platform.Platform.  LINUX:
+                pass
+            elif platform.type == _platform.Platform.WINDOWS:
+                _generate_msvc2015(self)
+            else:
+                raise NotImplementedError()
