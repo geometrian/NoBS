@@ -1,6 +1,4 @@
 from ._file import Directory
-from ._generate import _generate_msvc2015
-from . import _platform
 from ._target import _TargetUserBase
 
 
@@ -16,9 +14,9 @@ class Project(object):
         if not isinstance(build_files_dir,Directory): raise Exception("Build files directory must be an instance of \"nobs.Directory\"!")
         self.build_files_directory     = build_files_dir
 
-        self.platforms = []
-
         self.targets = []
+
+        self.generators = set()
 
     def add_target(self, target):
         if not isinstance(target,_TargetUserBase):
@@ -26,18 +24,13 @@ class Project(object):
         self.targets.append(target)
 
     def _validate_basic(self):
-        for platform in self.platforms:
-            platform._validate_basic()
+        for gen in self.generators:
+            gen._validate_basic()
         for target in self.targets:
             target._validate_basic()
 
     def generate(self):
         self._validate_basic()
-    
-        for platform in self.platforms:
-            if   platform.type == _platform.Platform.  LINUX:
-                pass
-            elif platform.type == _platform.Platform.WINDOWS:
-                _generate_msvc2015(self)
-            else:
-                raise NotImplementedError()
+
+        for generator in self.generators:
+            generator.generate() 

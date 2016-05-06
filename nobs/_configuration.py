@@ -1,13 +1,13 @@
 from ._architecture import Architecture
+from . import _generator_base
 from ._build_options import BuildOptions
-from . import _platform #different to resolve circ import
 from ._toolchain import Toolchain
 
 
 class Configuration(object):
-    def __init__(self, platform, name, name_build, build_options, toolchain, architecture):
-        if not isinstance(platform,_platform.Platform): raise Exception("Platform must be an instance of \"nobs.Platform\"!")
-        platform.configurations.append(self)
+    def __init__(self, generator, name, name_build, build_options, toolchain, architecture):
+        if not isinstance(generator,_generator_base._GeneratorBase): raise Exception("Generator must be an instance of { \"nobs.GeneratorMSVC2015\" }!")
+        generator.configurations.append(self)
         
         if not isinstance(name,str): raise Exception("Configuration name must be a string!")
         self.name = name

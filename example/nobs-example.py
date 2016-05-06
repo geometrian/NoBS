@@ -7,7 +7,7 @@ import nobs
 #        --Build result directory
 #        --Build temporary directory
 #        --Build files directory
-#        --Set of platforms (unordered), each with
+#        --Set of generators, each with
 #            --List of configurations (user-ordered), each with
 #                --Name
 #                --Standard build options
@@ -51,9 +51,9 @@ prj = nobs.Project(
     nobs.Directory(".ides/")        #Build files directory
 )
 
-#Platforms: contextualizes configurations
-plat_linux   = nobs.Platform(prj,"linux")
-plat_windows = nobs.Platform(prj,"windows")
+#Generators: describes desired build files
+##gen_gmake = nobs.GeneratorGMake(prj)
+gen_msvc  = nobs.GeneratorMSVC2015(prj)
 
 #Configurations: ways to generate the targets in your project.  By default, each target
 #   inherits all configurations, but targets may exclude themselves from or customize
@@ -66,14 +66,14 @@ toolchain_gcc   = nobs.Toolchain("gcc-5")
 toolchain_msvc  = nobs.Toolchain("msvc-2015")
 toolchain_clang = nobs.Toolchain("clang-3.7")
 toolchain_intel = nobs.Toolchain("intel-16.0")
-nobs.Configuration( plat_linux, "debug",   "lin_deb_x32", opts_deb, toolchain_gcc, nobs.Architecture("x86"   ) )
-nobs.Configuration( plat_linux, "debug",   "lin_deb_x64", opts_deb, toolchain_gcc, nobs.Architecture("x86-64") )
-nobs.Configuration( plat_linux, "release", "lin_rel_x32", opts_rel, toolchain_gcc, nobs.Architecture("x86"   ) )
-nobs.Configuration( plat_linux, "release", "lin_rel_x64", opts_rel, toolchain_gcc, nobs.Architecture("x86-64") )
-nobs.Configuration( plat_windows, "debug",   "win_deb_x32", opts_deb, toolchain_msvc, nobs.Architecture("x86"   ) )
-nobs.Configuration( plat_windows, "debug",   "win_deb_x64", opts_deb, toolchain_msvc, nobs.Architecture("x86-64") )
-nobs.Configuration( plat_windows, "release", "win_rel_x32", opts_rel, toolchain_msvc, nobs.Architecture("x86"   ) )
-nobs.Configuration( plat_windows, "release", "win_rel_x64", opts_rel, toolchain_msvc, nobs.Architecture("x86-64") )
+##nobs.Configuration( gen_gmake, "debug",   "lin_deb_x32", opts_deb, toolchain_gcc,  nobs.Architecture("x86"   ) )
+##nobs.Configuration( gen_gmake, "debug",   "lin_deb_x64", opts_deb, toolchain_gcc,  nobs.Architecture("x86-64") )
+##nobs.Configuration( gen_gmake, "release", "lin_rel_x32", opts_rel, toolchain_gcc,  nobs.Architecture("x86"   ) )
+##nobs.Configuration( gen_gmake, "release", "lin_rel_x64", opts_rel, toolchain_gcc,  nobs.Architecture("x86-64") )
+nobs.Configuration( gen_msvc,  "debug",   "win_deb_x32", opts_deb, toolchain_msvc, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_msvc,  "debug",   "win_deb_x64", opts_deb, toolchain_msvc, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_msvc,  "release", "win_rel_x32", opts_rel, toolchain_msvc, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_msvc,  "release", "win_rel_x64", opts_rel, toolchain_msvc, nobs.Architecture("x86-64") )
 
 #Targets: all build targets (executables, libraries) relevant to your project.  If you
 #   add them, they will be built.
