@@ -93,14 +93,17 @@ nobs.Configuration( gen_vs, "intel-s-rel", "win-rel-x64-intel-s", opts_rel, tool
 ##target_zlib = nobs.find_target_system("zlib")
 
 #   Define a static library as a build target, depending on "target_zlib".
+lib_headers = nobs.get_files_list("mylib/*.h") + nobs.get_files_list("mylib/*")
+lib_sources = nobs.get_files_list("mylib/*.cpp")
 target_mylib = nobs.TargetStaticLibrary(prj,
     "My Library",
     nobs.Export(
         [nobs.Directory(".")], #Include directories
+        lib_headers, #Exported headers (in this case, all of them, but could be a subset)
         [] #Additional definitions
     ),
-    nobs.get_files_list("mylib/*.h") + nobs.get_files_list("mylib/*"),
-    nobs.get_files_list("mylib/*.cpp"),
+    lib_headers,
+    lib_sources,
     [], #Dependencies
     None #PCH (optional: tuple (header,source) or default None)
 )

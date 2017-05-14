@@ -5,11 +5,17 @@ from . import _helpers
 
 
 class Export(object):
-    def __init__(self, dirs_incl_list, defs_list):
+    def __init__(self, dirs_incl_list, headers_list, defs_list):
         if not isinstance(dirs_incl_list,list): raise Exception("Exported include directories must be a list!")
         for d in dirs_incl_list:
             if not isinstance(d,Directory): raise Exception("Exported includes directories must be instances of \"nobs.Directory\"!")
         self.dirs_incl_list = dirs_incl_list
+
+        if not isinstance(headers_list,list): raise Exception("Headers list must be a list!")
+        for header in headers_list:
+            if not isinstance(header,File): raise Exception("Headers must be instances of \"nobs.File\"!")
+        #This may be a subset of the headers in the project.
+        self.headers_list = headers_list
 
         if not isinstance(defs_list,list): raise Exception("Exported defines must be a list!")
         for define in defs_list:
@@ -74,6 +80,17 @@ class _TargetLibraryBase(_TargetBase):
         self.exported = exported
 class _TargetUserBase(object):
     def __init__(self, headers_list,sources_list):
+##        if isinstance(headers_list,tuple):
+##            if len(headers_list)==2 and isinstance(headers_list[0],list) and isinstance(headers_list[1],list):
+##                self.headers_list        = headers_list[0]
+##                self.headers_list_public = headers_list[1]
+##        elif isinstance(headers_list,list):
+##            self.headers_list        = headers_list
+##            self.headers_list_public = headers_list
+##        else:
+##            raise Exception("Headers list must be a list or tuple of two lists!")
+##        for header in self.headers_list:
+##            if not isinstance(header,File): raise Exception("Headers must be instances of \"nobs.File\"!")
         if not isinstance(headers_list,list): raise Exception("Headers list must be a list!")
         for header in headers_list:
             if not isinstance(header,File): raise Exception("Headers must be instances of \"nobs.File\"!")
