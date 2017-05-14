@@ -1,4 +1,6 @@
+import hashlib
 import os
+import subprocess
 import uuid
 
 
@@ -25,3 +27,21 @@ def _get_uuid(name=None):
 
 def _reslash(path):
     return path.replace("\\","/")
+
+def get_file_hash(path):
+    h = hashlib.sha256()
+    with open(path,"rb") as file:
+        for chunk in iter(lambda:file.read(4096),b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+def run_bat(path):
+    p = subprocess.Popen(path, shell=True, stdout=subprocess.PIPE)
+    stdout,stderr = p.communicate()
+    if p.returncode != 0:
+        raise Exception((stdout+stderr).decode("utf-8"))
+
+try:
+    strinput = raw_input
+except:
+    strinput = input
