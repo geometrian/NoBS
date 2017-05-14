@@ -54,7 +54,7 @@ prj = nobs.Project(
 
 #Generators: describes desired build files
 ##gen_gmake = nobs.GeneratorGMake(prj)
-gen_msvc  = nobs.GeneratorVS2017(prj)
+gen_vs  = nobs.GeneratorVS2017(prj)
 
 #Configurations: ways to generate the targets in your project.  By default, each target
 #   inherits all configurations, but targets may exclude themselves from or customize
@@ -76,14 +76,14 @@ toolchain_intel = nobs.Toolchain("intel-17.0")
 ##nobs.Configuration( gen_gmake, "clang-s-deb", "lin-deb-x64-clang-s", opts_deb, toolchain_clang,  nobs.Architecture("x86-64") )
 ##nobs.Configuration( gen_gmake, "clang-s-rel", "lin-deb-x32-clang-s", opts_rel, toolchain_clang,  nobs.Architecture("x86"   ) )
 ##nobs.Configuration( gen_gmake, "clang-s-rel", "lin-deb-x64-clang-s", opts_rel, toolchain_clang,  nobs.Architecture("x86-64") )
-nobs.Configuration( gen_msvc, "msvc-s-deb", "win-deb-x32-msvc-s", opts_deb, toolchain_msvc, nobs.Architecture("x86"   ) )
-nobs.Configuration( gen_msvc, "msvc-s-deb", "win-deb-x64-msvc-s", opts_deb, toolchain_msvc, nobs.Architecture("x86-64") )
-nobs.Configuration( gen_msvc, "msvc-s-rel", "win-rel-x32-msvc-s", opts_rel, toolchain_msvc, nobs.Architecture("x86"   ) )
-nobs.Configuration( gen_msvc, "msvc-s-rel", "win-rel-x64-msvc-s", opts_rel, toolchain_msvc, nobs.Architecture("x86-64") )
-nobs.Configuration( gen_msvc, "intel-s-deb", "win-deb-x32-intel-s", opts_deb, toolchain_intel, nobs.Architecture("x86"   ) )
-nobs.Configuration( gen_msvc, "intel-s-deb", "win-deb-x64-intel-s", opts_deb, toolchain_intel, nobs.Architecture("x86-64") )
-nobs.Configuration( gen_msvc, "intel-s-rel", "win-rel-x32-intel-s", opts_rel, toolchain_intel, nobs.Architecture("x86"   ) )
-nobs.Configuration( gen_msvc, "intel-s-rel", "win-rel-x64-intel-s", opts_rel, toolchain_intel, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_vs, "msvc-s-deb", "win-deb-x32-msvc-s", opts_deb, toolchain_msvc, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_vs, "msvc-s-deb", "win-deb-x64-msvc-s", opts_deb, toolchain_msvc, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_vs, "msvc-s-rel", "win-rel-x32-msvc-s", opts_rel, toolchain_msvc, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_vs, "msvc-s-rel", "win-rel-x64-msvc-s", opts_rel, toolchain_msvc, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_vs, "intel-s-deb", "win-deb-x32-intel-s", opts_deb, toolchain_intel, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_vs, "intel-s-deb", "win-deb-x64-intel-s", opts_deb, toolchain_intel, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_vs, "intel-s-rel", "win-rel-x32-intel-s", opts_rel, toolchain_intel, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_vs, "intel-s-rel", "win-rel-x64-intel-s", opts_rel, toolchain_intel, nobs.Architecture("x86-64") )
 
 #Targets: all build targets (executables, libraries) relevant to your project.  If you
 #   add them, they will be built.

@@ -15,6 +15,8 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 
         self.ver_year = ver_year
 
+        self.is_vs_gen = True
+
     def generate(self):
         #We need to generate three files:
         #   A ".sln" "project" file.  This ties together the target files
@@ -372,3 +374,4 @@ class GeneratorVS2015(_GeneratorVS):
 class GeneratorVS2017(_GeneratorVS):
     def __init__(self, project):
         _GeneratorVS.__init__(self, project, 2017)
+GeneratorVS = GeneratorVS2017

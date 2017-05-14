@@ -35,11 +35,15 @@ def get_file_hash(path):
             h.update(chunk)
     return h.hexdigest()
 
-def run_bat(path):
-    p = subprocess.Popen(path, shell=True, stdout=subprocess.PIPE)
+def run_subproc(cmd):
+    print("Running in subprocess: \"%s\""%cmd)
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     stdout,stderr = p.communicate()
     if p.returncode != 0:
-        raise Exception((stdout+stderr).decode("utf-8"))
+        err = ""
+        if stdout!=None: err+=stdout.decode("utf-8")
+        if stderr!=None: err+=stderr.decode("utf-8")
+        raise Exception(err)
 
 try:
     strinput = raw_input

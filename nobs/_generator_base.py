@@ -11,6 +11,8 @@ class _GeneratorBase(object):
 
         self.configurations = []
 
+        self.is_vs_gen = False
+
     def add_configuration(self, configuration):
         if not isinstance(configuration,_configuration.Configuration):
             raise Exception("Platform configuration must be an instance of \"nobs.Configuration\"!")

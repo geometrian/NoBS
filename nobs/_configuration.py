@@ -46,3 +46,5 @@ class Configuration(object):
         )
     def _get_msvc_arch(self):
         return ["Win32","x64","ARM"][int(self.architecture.type)]
+    def _get_msvc_archname(self):
+        return ["x86","x64","ARM"][int(self.architecture.type)]
