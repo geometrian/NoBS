@@ -224,7 +224,14 @@ class _GeneratorVS(_generator_base._GeneratorBase):
         for config in self.configurations:
             data += "\t<ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='"+config._get_msvc_configplat()+"""'">
 \t\t<ClCompile>
-\t\t\t<PrecompiledHeader>"""+("Use" if target.pch!=None else "NotUsing")+"""</PrecompiledHeader>
+"""
+            if len(config.additional_include_directories) > 0:
+                data += "\t\t\t<AdditionalIncludeDirectories>"
+                for d in config.additional_include_directories:
+                    data += _helpers._reslash( os.path.relpath(d.abspath,self.project.build_files_directory.abspath) ) + ";"
+                data += "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n"
+            data +=\
+"""\t\t\t<PrecompiledHeader>"""+("Use" if target.pch!=None else "NotUsing")+"""</PrecompiledHeader>
 \t\t\t<Optimization>"""+("Disabled","MaxSpeed")[config.build_options.optimization]+"""</Optimization>
 \t\t\t<WarningLevel>Level3</WarningLevel>
 \t\t\t<PreprocessorDefinitions>"""

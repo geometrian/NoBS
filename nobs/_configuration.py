@@ -16,6 +16,8 @@ class Configuration(object):
         if not isinstance(name_build,str): raise Exception("Configuration build name must be a string!")
         self.name_build = name_build
 
+        self.additional_include_directories = []
+
         if not isinstance(build_options,BuildOptions): raise Exception("Configuration build options must be an instance of \"nobs.BuildOptions\"!")
         self.build_options = build_options
 

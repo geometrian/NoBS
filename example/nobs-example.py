@@ -10,6 +10,7 @@ import nobs
 #        --Set of generators, each with
 #            --List of configurations (user-ordered), each with
 #                --Name
+#                --Additional include directories
 #                --Standard build options
 #                    --"debug", "release", "release-with-symbols"
 #                    --Defines
