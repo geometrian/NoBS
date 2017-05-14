@@ -35,14 +35,16 @@ def get_file_hash(path):
 def reslash(path):
     return path.replace("\\","/")
 
-def run_subproc(cmd):
-    print("Running in subprocess: \"%s\""%cmd)
+def run_subproc(cmd,print_invocation=True):
+    if print_invocation:
+        print("  Running in subprocess: \"%s\""%cmd)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
     stdout,stderr = p.communicate()
     if p.returncode != 0:
         err = ""
         if stdout!=None: err+=stdout.decode("utf-8")
         if stderr!=None: err+=stderr.decode("utf-8")
+        print(err)
         raise Exception(err)
 
 try:
