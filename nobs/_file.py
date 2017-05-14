@@ -29,9 +29,11 @@ class Directory(_FileBase):
         self.abspath += "/"
         self.relpath += "/"
 
-        if not os.path.exists(self.abspath):
-            os.mkdir(self.abspath)
-
+        def _make_as_necessary(d):
+            if not os.path.exists(d):
+                _make_as_necessary( os.path.normpath(os.path.join(d,"../")) )
+                os.mkdir(d)
+        _make_as_necessary(self.abspath)
         
 class File(_FileBase):
     def __init__(self, relpath):
