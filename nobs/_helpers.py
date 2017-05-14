@@ -25,15 +25,15 @@ def _get_uuid(name=None):
         u = uuid.uuid5(uuid.NAMESPACE_X500,name) #SHA-1 deterministic UUID
     return str(u).upper()
 
-def _reslash(path):
-    return path.replace("\\","/")
-
 def get_file_hash(path):
     h = hashlib.sha256()
     with open(path,"rb") as file:
         for chunk in iter(lambda:file.read(4096),b""):
             h.update(chunk)
     return h.hexdigest()
+
+def reslash(path):
+    return path.replace("\\","/")
 
 def run_subproc(cmd):
     print("Running in subprocess: \"%s\""%cmd)

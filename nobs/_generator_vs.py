@@ -189,12 +189,12 @@ class _GeneratorVS(_generator_base._GeneratorBase):
         dep_libs = []
         for dep in target.dependencies_list_flat:
             dirs_inc += [
-                _helpers._reslash(
+                _helpers.reslash(
                     os.path.relpath( incl.abspath, self.project.build_files_directory.abspath ) + "\\"
                 )
                 for incl in dep.exported.dirs_incl_list
             ]
-            dirs_lib += [ _helpers._reslash(
+            dirs_lib += [ _helpers.reslash(
                 os.path.relpath( dep.project.build_result_directory.abspath, self.project.build_files_directory.abspath ) + "\\"
             ) ]
             dep_libs += [ dep.name + ".lib" ]
@@ -208,11 +208,11 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 \t\t<OutDir>%s</OutDir>
 \t\t<IntDir>%s</IntDir>
 """ % (
-                _helpers._reslash( os.path.relpath(
+                _helpers.reslash( os.path.relpath(
                     self.project.build_result_directory.relpath+config.name_build,
                     self.project.build_files_directory.abspath
                 ) + "\\" ),
-                _helpers._reslash( os.path.relpath(
+                _helpers.reslash( os.path.relpath(
                     self.project.build_temporary_directory.relpath+config.name_build+"/"+target.name,
                     self.project.build_files_directory.abspath
                 ) + "\\" )
@@ -230,7 +230,7 @@ class _GeneratorVS(_generator_base._GeneratorBase):
             if len(config.additional_include_directories) > 0:
                 data += "\t\t\t<AdditionalIncludeDirectories>"
                 for d in config.additional_include_directories:
-                    data += _helpers._reslash( os.path.relpath(d.abspath,self.project.build_files_directory.abspath) ) + ";"
+                    data += _helpers.reslash( os.path.relpath(d.abspath,self.project.build_files_directory.abspath) ) + ";"
                 data += "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n"
             data +=\
 """\t\t\t<PrecompiledHeader>"""+("Use" if target.pch!=None else "NotUsing")+"""</PrecompiledHeader>
@@ -279,7 +279,7 @@ class _GeneratorVS(_generator_base._GeneratorBase):
         if len(files) > 0:
             data += "\t<ItemGroup>\n"
             for file in files:
-                relpath = _helpers._reslash( os.path.relpath(file.abspath,self.project.build_files_directory.abspath) )
+                relpath = _helpers.reslash( os.path.relpath(file.abspath,self.project.build_files_directory.abspath) )
                 if target.pch != None and path == target.pch[1]:
                     if file.is_header:
                         data += "\t\t<ClInclude Include=\""+relpath+"\">\n\t\t\t<PrecompiledHeader>Create</PrecompiledHeader>\t\t</ClInclude>\n"
@@ -325,7 +325,7 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 ##            print("abspath")
 ##            print(project.build_files_directory.abspath)
 ##            print("done")
-            relpath = _helpers._reslash( os.path.relpath(folder,self.project.build_files_directory.abspath) )
+            relpath = _helpers.reslash( os.path.relpath(folder,self.project.build_files_directory.abspath) )
             data += "\t\t<Filter Include=\""+relpath+"""\">
 \t\t\t<UniqueIdentifier>{"""+_helpers._get_uuid(relpath)+"""}</UniqueIdentifier>
 \t\t</Filter>
@@ -335,8 +335,8 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 """
 
         for file in files:
-            relpath = _helpers._reslash( os.path.relpath(file.abspath,self.project.build_files_directory.abspath) )
-            reldir = _helpers._reslash( os.path.relpath(file.absdir,self.project.build_files_directory.abspath) )
+            relpath = _helpers.reslash( os.path.relpath(file.abspath,self.project.build_files_directory.abspath) )
+            reldir = _helpers.reslash( os.path.relpath(file.absdir,self.project.build_files_directory.abspath) )
             if file.is_header:
                 data += "\t\t<ClInclude Include=\""+relpath+"""\">
 \t\t\t<Filter>"""+reldir+"""</Filter>
