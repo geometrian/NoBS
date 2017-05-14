@@ -9,9 +9,11 @@ from ._architecture import Architecture
 from ._build_options import BuildOptions
 
 
-class GeneratorMSVC2015(_generator_base._GeneratorBase):
-    def __init__(self, project):
+class _GeneratorVS(_generator_base._GeneratorBase):
+    def __init__(self, project, ver_year):
         _generator_base._GeneratorBase.__init__(self, project)
+
+        self.ver_year = ver_year
 
     def generate(self):
         #We need to generate three files:
@@ -19,12 +21,14 @@ class GeneratorMSVC2015(_generator_base._GeneratorBase):
         #   Some ".vcxproj" "target" file(s).  This describes a set of files and how to compile them into a target
         #   Some ".vcxproj.filters" "filters" file(s).  This describes how the files appear in the IDE.
 
-        self._generate_msvc2015_sln()
+        self._generate_sln()
         for target in self.project.targets:
-            self._generate_msvc2015_vcxproj(target)
-            self._generate_msvc2015_vcxprojfilters(target)
+            self._generate_vcxproj(target)
+            self._generate_vcxprojfilters(target)
+            #Not strictly necessary, as VS will create these.  However, creating up-front prevents confusing projects' source control.
+            self._generate_vcxprojuser(target)
 
-    def _generate_msvc2015_sln(self):
+    def _generate_sln(self):
         #Example:
 
         ##Microsoft Visual Studio Solution File, Format Version 12.00
@@ -54,15 +58,19 @@ class GeneratorMSVC2015(_generator_base._GeneratorBase):
         ##	EndGlobalSection
         ##EndGlobal
 
-        data = """Microsoft Visual Studio Solution File, Format Version 12.00
-VisualStudioVersion = 14.0.25123.0
-MinimumVisualStudioVersion = 10.0.40219.1
-"""
+        #Header
+        data = "Microsoft Visual Studio Solution File, Format Version 12.00\n"
+        if   self.ver_year == 2015:
+            data += "VisualStudioVersion = 14.0.25123.0"
+        elif self.ver_year == 2017:
+            data += "# Visual Studio 15\n"
+            data += "VisualStudioVersion = 15.0.26430.4\n"
+        data += "MinimumVisualStudioVersion = 10.0.40219.1\n"
+
+        #Declare projects
+        #   See http://stackoverflow.com/a/2328668/688624
+        #   See http://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
         for target in self.project.targets:
-            #Project specification.
-            #   See http://stackoverflow.com/a/2328668/688624
-            #   See http://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
-            
             ##Project("{<Project Type UUID>}") = "<Project Name>", "<Project File's Location>", "{<Unique Project UUID>}"
             ##	ProjectSection(ProjectDependencies) = postProject
             ##		{<Dependency1 Project UUID>} = {<Dependency1 Project UUID>}
@@ -75,9 +83,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
             #All targets are C++ targets.
             data += "Project(\"{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}\") = \""+target.name+"\", \""+target.name+".vcxproj\", \"{"+target.uuid+"}\"\n"
 
-            deps = target._get_flattened_dependencies_list()
             deps_salient = [] #All of this target's ultimate dependencies that are also defined in this project
-            for dep in deps:
+            for dep in target.dependencies_list_flat:
                 if dep in self.project.targets:
                     deps_salient.append(dep)
             if len(deps_salient) > 0:
@@ -86,25 +93,42 @@ MinimumVisualStudioVersion = 10.0.40219.1
                     data += "\t\t{"+dep.uuid+"} = {"+dep.uuid+"}\n"
                 data += "\tEndProjectSection\n"
             data += "EndProject\n"
-        data += """Global
-\tGlobalSection(SolutionConfigurationPlatforms) = preSolution
-"""
+
+        #Global configuration section
+        data += "Global\n"
+        
+        data += "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n"
+        temp_lines = []
         for config in self.configurations:
-            data += "\t\t"+config._get_msvc_name()+" = "+config._get_msvc_name()+"\n"
-            #\t\tdebug|Win32 = debug|Win32
-        data += "\tEndGlobalSection\n\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n"
+            #E.g. "\t\tdebug|Win32 = debug|Win32"
+            temp_lines.append("\t\t"+config._get_msvc_name()+" = "+config._get_msvc_name()+"\n")
+        temp_lines.sort() #VS sorts these, at least in VS 2017.
+        data += "".join(temp_lines)
+        data += "\tEndGlobalSection\n"
+
+        data += "\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n"
+        temp_lines = []
         for target in self.project.targets:
             for config in self.configurations:
-                msvc_name = config._get_msvc_name()
-                data +=\
-                    "\t\t{"+target.uuid+"}."+msvc_name+".ActiveCfg = "+msvc_name+"\n" +\
-                    "\t\t{"+target.uuid+"}."+msvc_name+".Build.0   = "+msvc_name+"\n"
-        data += """\tEndGlobalSection
-\tGlobalSection(SolutionProperties) = preSolution
+                if self.ver_year < 2017:
+                    msvc_name = config._get_msvc_name()
+                    temp_lines.append("\t\t{"+target.uuid+"}."+msvc_name+".ActiveCfg = "+msvc_name+"\n")
+                    temp_lines.append("\t\t{"+target.uuid+"}."+msvc_name+".Build.0   = "+msvc_name+"\n")
+                else:
+                    msvc_config=config._get_msvc_configplat(); msvc_name=config._get_msvc_name()
+                    temp_lines.append("\t\t{"+target.uuid+"}."+msvc_name+".ActiveCfg = "+msvc_config+"\n")
+                    temp_lines.append("\t\t{"+target.uuid+"}."+msvc_name+".Build.0   = "+msvc_config+"\n")
+                    temp_lines.append("\t\t{"+target.uuid+"}."+msvc_name+".Deploy.0  = "+msvc_config+"\n")
+        temp_lines.sort() #VS sorts these, at least in VS 2017.
+        data += "".join(temp_lines)
+        data += "\tEndGlobalSection\n"
+
+        data += """\tGlobalSection(SolutionProperties) = preSolution
 \t\tHideSolutionNode = FALSE
 \tEndGlobalSection
-EndGlobal
 """
+
+        data += "EndGlobal\n"
 
         file = open(os.path.join(
             self.project.build_files_directory.abspath,
@@ -113,7 +137,7 @@ EndGlobal
         file.write(data)
         file.close()
 
-    def _generate_msvc2015_vcxproj(self, target):
+    def _generate_vcxproj(self, target):
         #Note: the value for xmlns must be the dead link "http://schemas.microsoft.com/developer/msbuild/2003",
         #   not the more sensible https://msdn.microsoft.com/en-us/library/5dy88c2e.aspx
         data = """<?xml version="1.0" encoding="utf-8"?>
@@ -161,7 +185,7 @@ EndGlobal
         dirs_inc = []
         dirs_lib = []
         dep_libs = []
-        for dep in target._get_flattened_dependencies_list():
+        for dep in target.dependencies_list_flat:
             dirs_inc += [
                 _helpers._reslash(
                     os.path.relpath( incl.abspath, self.project.build_files_directory.abspath ) + "\\"
@@ -216,6 +240,7 @@ EndGlobal
             if config.build_options.is_stdlib_dynamically_linked:
                 data += "DLL"
             data += "</RuntimeLibrary>\n"
+            data += "\t\t\t<BufferSecurityCheck>"+("true" if config.build_options.buffer_check else "false")+"</BufferSecurityCheck>\n"
             if config.architecture.type == Architecture.ARCH_X86:
                 #Due to a long-standingly-denied bug, MSVC only accepts these in x86 mode.  It generates them automatically for x86-64 mode.
                 if   config.build_options.simd in [BuildOptions.SIMD_NONE,BuildOptions.SIMD_MMX]: pass
@@ -271,7 +296,7 @@ EndGlobal
         file.write(data)
         file.close()
 
-    def _generate_msvc2015_vcxprojfilters(self, target):
+    def _generate_vcxprojfilters(self, target):
         files = target.headers_list + target.sources_list
         
         folders = []
@@ -325,3 +350,18 @@ EndGlobal
         file = open(os.path.join(self.project.build_files_directory.abspath,target.name+".vcxproj.filters"),"w")
         file.write(data)
         file.close()
+
+    def _generate_vcxprojuser(self, target):
+        file = open(os.path.join(self.project.build_files_directory.abspath,target.name+".vcxproj.user"),"w")
+        file.write("""<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup />
+</Project>""")
+        file.close()
+
+class GeneratorVS2015(_GeneratorVS):
+    def __init__(self, project):
+        _GeneratorVS.__init__(self, project, 2015)
+class GeneratorVS2017(_GeneratorVS):
+    def __init__(self, project):
+        _GeneratorVS.__init__(self, project, 2017)

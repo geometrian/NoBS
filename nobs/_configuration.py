@@ -7,7 +7,8 @@ from ._toolchain import Toolchain
 class Configuration(object):
     def __init__(self, generator, name, name_build, build_options, toolchain, architecture):
         if not isinstance(generator,_generator_base._GeneratorBase): raise Exception("Generator must be an instance of { \"nobs.GeneratorMSVC2015\" }!")
-        generator.configurations.append(self)
+        self.generator = generator
+        self.generator.configurations.append(self)
         
         if not isinstance(name,str): raise Exception("Configuration name must be a string!")
         self.name = name
@@ -24,10 +25,10 @@ class Configuration(object):
         if not isinstance(architecture,Architecture): raise Exception("Configuration architecture must be an instance of \"nobs.Architecture\"!")
         self.architecture = architecture
 
-    def _validate_basic(self):
-        self.build_options._validate_basic()
-        self.toolchain._validate_basic()
-        self.architecture._validate_basic()
+##    def _validate_basic(self):
+##        self.build_options._validate_basic()
+##        self.toolchain._validate_basic()
+##        self.architecture._validate_basic()
 
     def _get_msvc_configplat(self):
         #Return something like "debug|Win32"

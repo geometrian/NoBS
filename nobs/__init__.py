@@ -4,7 +4,7 @@ from ._configuration import Configuration
 from ._define import Define
 from ._file import Directory, File, get_files_list
 #from ._generator_base import
-from ._generator_msvc2015 import GeneratorMSVC2015
+from ._generator_vs import GeneratorVS2015, GeneratorVS2017
 #from ._helpers import
 from ._project import Project
 from ._target import Export, TargetStaticLibrary, TargetDynamicLibrary, TargetExecutable

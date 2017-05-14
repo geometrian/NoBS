@@ -18,19 +18,19 @@ class Project(object):
 
         self.generators = set()
 
-    def add_target(self, target):
-        if not isinstance(target,_TargetUserBase):
-            raise Exception("Target must be an instance of one of { \"nobs.TargetStaticLibrary\", \"nobs.TargetDynamicLibrary\", \"nobs.TargetExecutable\" }!")
-        self.targets.append(target)
+##    def _add_target(self, target):
+##        if not isinstance(target,_TargetUserBase):
+##            raise Exception("Target must be an instance of one of { \"nobs.TargetStaticLibrary\", \"nobs.TargetDynamicLibrary\", \"nobs.TargetExecutable\" }!")
+##        self.targets.append(target)
 
-    def _validate_basic(self):
-        for gen in self.generators:
-            gen._validate_basic()
-        for target in self.targets:
-            target._validate_basic()
+##    def _validate(self):
+##        for gen in self.generators:
+##            gen._validate()
+##        for target in self.targets:
+##            target._validate()
 
     def generate(self):
-        self._validate_basic()
+##        self._validate()
 
         for generator in self.generators:
             generator.generate() 

@@ -53,7 +53,7 @@ prj = nobs.Project(
 
 #Generators: describes desired build files
 ##gen_gmake = nobs.GeneratorGMake(prj)
-gen_msvc  = nobs.GeneratorMSVC2015(prj)
+gen_msvc  = nobs.GeneratorVS2017(prj)
 
 #Configurations: ways to generate the targets in your project.  By default, each target
 #   inherits all configurations, but targets may exclude themselves from or customize
@@ -62,24 +62,35 @@ opts_deb = nobs.BuildOptions("debug")
 opts_rel = nobs.BuildOptions("release-with-symbols")
 opts_deb.set_dynamic_stdlib(); opts_deb.simd=nobs.BuildOptions.SIMD_SSE4_2
 opts_rel.set_dynamic_stdlib(); opts_rel.simd=nobs.BuildOptions.SIMD_SSE4_2
-toolchain_gcc   = nobs.Toolchain("gcc-5")
-toolchain_msvc  = nobs.Toolchain("msvc-2015")
-toolchain_clang = nobs.Toolchain("clang-3.7")
-toolchain_intel = nobs.Toolchain("intel-16.0")
-##nobs.Configuration( gen_gmake, "debug",   "lin_deb_x32", opts_deb, toolchain_gcc,  nobs.Architecture("x86"   ) )
-##nobs.Configuration( gen_gmake, "debug",   "lin_deb_x64", opts_deb, toolchain_gcc,  nobs.Architecture("x86-64") )
-##nobs.Configuration( gen_gmake, "release", "lin_rel_x32", opts_rel, toolchain_gcc,  nobs.Architecture("x86"   ) )
-##nobs.Configuration( gen_gmake, "release", "lin_rel_x64", opts_rel, toolchain_gcc,  nobs.Architecture("x86-64") )
-nobs.Configuration( gen_msvc,  "debug",   "win_deb_x32", opts_deb, toolchain_msvc, nobs.Architecture("x86"   ) )
-nobs.Configuration( gen_msvc,  "debug",   "win_deb_x64", opts_deb, toolchain_msvc, nobs.Architecture("x86-64") )
-nobs.Configuration( gen_msvc,  "release", "win_rel_x32", opts_rel, toolchain_msvc, nobs.Architecture("x86"   ) )
-nobs.Configuration( gen_msvc,  "release", "win_rel_x64", opts_rel, toolchain_msvc, nobs.Architecture("x86-64") )
+    
+toolchain_gcc   = nobs.Toolchain("gcc-7.1")
+toolchain_clang = nobs.Toolchain("clang-4.0.0")
+toolchain_msvc  = nobs.Toolchain("msvc-2017")
+toolchain_intel = nobs.Toolchain("intel-17.0")
+##nobs.Configuration( gen_gmake, "gcc-s-deb", "lin-deb-x32-gcc-s", opts_deb, toolchain_gcc,  nobs.Architecture("x86"   ) )
+##nobs.Configuration( gen_gmake, "gcc-s-deb", "lin-deb-x64-gcc-s", opts_deb, toolchain_gcc,  nobs.Architecture("x86-64") )
+##nobs.Configuration( gen_gmake, "gcc-s-rel", "lin-deb-x32-gcc-s", opts_rel, toolchain_gcc,  nobs.Architecture("x86"   ) )
+##nobs.Configuration( gen_gmake, "gcc-s-rel", "lin-deb-x64-gcc-s", opts_rel, toolchain_gcc,  nobs.Architecture("x86-64") )
+##nobs.Configuration( gen_gmake, "clang-s-deb", "lin-deb-x32-clang-s", opts_deb, toolchain_clang,  nobs.Architecture("x86"   ) )
+##nobs.Configuration( gen_gmake, "clang-s-deb", "lin-deb-x64-clang-s", opts_deb, toolchain_clang,  nobs.Architecture("x86-64") )
+##nobs.Configuration( gen_gmake, "clang-s-rel", "lin-deb-x32-clang-s", opts_rel, toolchain_clang,  nobs.Architecture("x86"   ) )
+##nobs.Configuration( gen_gmake, "clang-s-rel", "lin-deb-x64-clang-s", opts_rel, toolchain_clang,  nobs.Architecture("x86-64") )
+nobs.Configuration( gen_msvc, "msvc-s-deb", "win-deb-x32-msvc-s", opts_deb, toolchain_msvc, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_msvc, "msvc-s-deb", "win-deb-x64-msvc-s", opts_deb, toolchain_msvc, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_msvc, "msvc-s-rel", "win-rel-x32-msvc-s", opts_rel, toolchain_msvc, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_msvc, "msvc-s-rel", "win-rel-x64-msvc-s", opts_rel, toolchain_msvc, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_msvc, "intel-s-deb", "win-deb-x32-intel-s", opts_deb, toolchain_intel, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_msvc, "intel-s-deb", "win-deb-x64-intel-s", opts_deb, toolchain_intel, nobs.Architecture("x86-64") )
+nobs.Configuration( gen_msvc, "intel-s-rel", "win-rel-x32-intel-s", opts_rel, toolchain_intel, nobs.Architecture("x86"   ) )
+nobs.Configuration( gen_msvc, "intel-s-rel", "win-rel-x64-intel-s", opts_rel, toolchain_intel, nobs.Architecture("x86-64") )
 
 #Targets: all build targets (executables, libraries) relevant to your project.  If you
 #   add them, they will be built.
+
 #   Get a target static or dynamic library that's expected to be on the system.  Many
 #       are pre-defined for you.  You can always tweak them or add your own in "nobs-sys/".
-##target_zlib = nobs.find_target_system("zlib-static")
+##target_zlib = nobs.find_target_system("zlib")
+
 #   Define a static library as a build target, depending on "target_zlib".
 target_mylib = nobs.TargetStaticLibrary(prj,
     "My Library",
@@ -87,7 +98,7 @@ target_mylib = nobs.TargetStaticLibrary(prj,
         [nobs.Directory(".")], #Include directories
         [] #Additional definitions
     ),
-    nobs.get_files_list("mylib/*.h"),
+    nobs.get_files_list("mylib/*.h") + nobs.get_files_list("mylib/*"),
     nobs.get_files_list("mylib/*.cpp"),
     [], #Dependencies
     None #PCH (optional: tuple (header,source) or default None)
@@ -100,9 +111,12 @@ target_myexec = nobs.TargetExecutable(prj,
     "My Executable",
     nobs.get_files_list("myexec/*.h"),
     nobs.get_files_list("myexec/*.cpp"),
-    [target_mylib]
+    [ #dependencies
+        target_mylib
+    ]
 )
 
+#Generate project files
 prj.generate()
 
 

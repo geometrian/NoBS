@@ -23,3 +23,8 @@
 
 .vs/
 __pycache__/
+*.pyc
+
+example/.*/
+
+nobs-sys/files-for-projects/*/
