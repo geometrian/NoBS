@@ -54,6 +54,7 @@
 import os,sys; sys.path.append("../")
 
 import nobs
+import nobs.sys
 
 
 #The return-values of all the below functions are objects which have additional properties, which
@@ -117,19 +118,20 @@ nobs.Configuration( gen_vs,    "release-msvc-static",  "win-rel-x64-msvc-s",  op
 
 #	Get a target static or dynamic library that's expected to be on the system.  Many are pre-
 #		defined for you.  You can always tweak them or add your own in "nobs-sys/".
-#target_zlib = nobs.find_target_system("zlib")
+target_zlib = nobs.sys.get_system_target("zlib")
 
 #	Define a static library as a build target.
 target_mylib = nobs.TargetStaticLibrary(prj,
 	"My Library",
 	nobs.Export(
-		[ nobs.Directory(".")        ], #Include directories
-		[ nobs.File("mylib/include") ], #Exported headers
-		[] #Additional definitions
+		[                            ], #Exported additional definitions
+		[ nobs.Directory(".")        ], #Exported include directories
+		[ nobs.File("mylib/include") ] #Exported headers
+		#[ nobs.Directory(".build/")  ]  #Exported libraries root directories (optional and usually unecessary; will use build directory by default)
 	),
 	nobs.get_files_list("mylib/**/*.hpp") + [ nobs.File("mylib/include") ],
 	nobs.get_files_list("mylib/**/*.cpp"),
-	[], #Dependencies
+	[ target_zlib ], #Dependencies
 	None #PCH (optional: tuple (header,source) or default `None`)
 )
 #	Define an executable as a build target, depending on `target_mylib`.  Note: because

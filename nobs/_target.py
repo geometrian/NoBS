@@ -3,24 +3,30 @@ from ._file import Directory, File
 from . import _project
 from . import _helpers
 
+import sys
+
 
 class Export(object):
-	def __init__(self, dirs_incl_list, headers_list, defs_list):
-		if not isinstance(dirs_incl_list,list): raise Exception("Exported include directories must be a list!")
-		for d in dirs_incl_list:
-			if not isinstance(d,Directory): raise Exception("Exported includes directories must be instances of `nobs.Directory`!")
+	def __init__(self, defs_list, dirs_incl_list,headers_list, dirs_libroot_list=None):
+		_helpers._check_type(defs_list,"Exported defines",list)
+		for define in defs_list: _helpers._check_type(define,"Exported defines",Define)
+		self.defs_list = defs_list
+
+		_helpers._check_type(dirs_incl_list,"Exported include directories",list)
+		for d in dirs_incl_list: _helpers._check_type(d,"Exported includes directory",Directory)
 		self.dirs_incl_list = dirs_incl_list
 
-		if not isinstance(headers_list,list): raise Exception("Headers list must be a list!")
-		for header in headers_list:
-			if not isinstance(header,File): raise Exception("Headers must be instances of `nobs.File`!")
+		_helpers._check_type(headers_list,"Exported headers list",list)
+		for header in headers_list: _helpers._check_type(header,"Exported header",File)
 		#This may be a subset of the headers in the project.
 		self.headers_list = headers_list
 
-		if not isinstance(defs_list,list): raise Exception("Exported defines must be a list!")
-		for define in defs_list:
-			if not isinstance(define,Define): raise Exception("Exported defines must be instances of `nobs.Define`!")
-		self.defs_list = defs_list
+		if dirs_libroot_list == None:
+			self.dirs_libroot_list = dirs_libroot_list
+		else:
+			_helpers._check_type(dirs_libroot_list,"Exported libraries root directories",list)
+			for d in dirs_libroot_list: _helpers._check_type(d,"Exported libraries root directory",Directory)
+			self.dirs_libroot_list = dirs_libroot_list
 
 
 class _TargetBase(object):
@@ -75,9 +81,12 @@ class _TargetLibraryBase(_TargetBase):
 	def __init__(self, project, name, type, exported, dependencies_list, pch):
 		_TargetBase.__init__(self, project, name, type, dependencies_list, pch)
 
-		if not isinstance(exported,Export):
-			raise Exception("Library export must be an instance of `nobs.Export`!")
+		_helpers._check_type(exported,"Library export",Export)
 		self.exported = exported
+
+		if self.exported.dirs_libroot_list == None:
+			self.exported.dirs_libroot_list = [ self.project.directory_build_result ]
+
 class _TargetUserBase(object):
 	def __init__(self, headers_list,sources_list):
 ##        if isinstance(headers_list,tuple):
@@ -128,7 +137,3 @@ class TargetExecutable(_TargetBase,_TargetUserBase):
 
 	def _getMSVCType(self):
 		return "Application"
-
-
-def find_target_system(name):
-	...

@@ -6,6 +6,8 @@ try:
 except:
 	import _helpers
 
+from . import sys as nobs_sys
+
 
 class _FileBase(object):
 	def __init__(self, relpath):
@@ -19,6 +21,8 @@ class _FileBase(object):
 		self.ext = os.path.splitext(relpath)[1].lower()
 		self.is_header = self.ext in [".h",".hh",".hpp",".hxx",".h++"]
 		self.is_source = self.ext in [".c",".cc",".cpp",".cxx",".c++"]
+
+		self.is_in_nobs_sys_dir = _helpers.reslash(os.path.commonpath((nobs_sys.NOBS_SYS_DIR,self.abspath))+"/" ) == nobs_sys.NOBS_SYS_DIR
 
 	def __repr__(self):
 		return str(self)

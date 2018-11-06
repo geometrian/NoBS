@@ -203,15 +203,14 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 		dirs_lib = []
 		dep_libs = []
 		for dep in target.dependencies_list_flat:
-			dirs_inc += [
-				_helpers.reslash(
-					os.path.relpath( incl.abspath, self.project.directory_project_files.abspath ) + "\\"
-				)
-				for incl in dep.exported.dirs_incl_list
-			]
-			dirs_lib += [ _helpers.reslash(
-				os.path.relpath( dep.project.directory_build_result.abspath, self.project.directory_project_files.abspath ) + "\\"
-			) ]
+			for incl in dep.exported.dirs_incl_list:
+				if incl.is_in_nobs_sys_dir: include=incl.abspath
+				else:                       include=os.path.relpath( incl.abspath, self.project.directory_project_files.abspath ) + "\\"
+				dirs_inc.append(_helpers.reslash(include))
+			for libr in dep.exported.dirs_libroot_list:
+				if libr.is_in_nobs_sys_dir: library=libr.abspath
+				else:                       library=os.path.relpath( libr.abspath, self.project.directory_project_files.abspath ) + "\\"
+				dirs_lib.append(_helpers.reslash(library))
 			dep_libs += [ dep.name + ".lib" ]
 
 		for config in self.configurations:
@@ -238,9 +237,9 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 \t\t<IntDir>%s</IntDir>
 """ % (dir_out,dir_int)
 			if len(dirs_inc) > 0:
-				data += "\t\t<IncludePath>"+"".join([inc+";" for inc in dirs_inc])+"$(IncludePath)</IncludePath>\n"
+				data += "\t\t<IncludePath>"+"".join([dir_inc+";" for dir_inc in dirs_inc])+"$(IncludePath)</IncludePath>\n"
 			if len(dirs_lib) > 0:
-				data += "\t\t<LibraryPath>"+"".join([lib+config.name_build+"/;" for lib in dirs_lib])+"$(LibraryPath)</LibraryPath>\n"
+				data += "\t\t<LibraryPath>"+"".join([dir_lib+config.name_build+"/;" for dir_lib in dirs_lib])+"$(LibraryPath)</LibraryPath>\n"
 			data += """\t</PropertyGroup>\n"""
 
 		for config in self.configurations:
@@ -273,6 +272,8 @@ class _GeneratorVS(_generator_base._GeneratorBase):
 			source_reldepth = max([_helpers.get_relative_depth(self.project.directory_project_root.abspath,self.project.directory_project_files.abspath),0])
 			if source_reldepth > 0:
 				data += "\t\t\t<ObjectFileName>$(IntDir)"+"/dummy"*source_reldepth+"/%(RelativeDir)/</ObjectFileName>\n"
+			if target.type != _target._TargetBase.EXECUTABLE:
+				data += "\t\t\t<ProgramDataBaseFileName>$(OutDir)$(ProjectName).pdb</ProgramDataBaseFileName>\n"
 			if config.architecture.type == Architecture.ARCH_X86:
 				#Due to a long-standingly-denied bug, MSVC only accepts these in x86 mode.  It generates them automatically for x86-64 mode.
 				if   config.build_options.simd in [BuildOptions.SIMD_NONE,BuildOptions.SIMD_MMX]: pass

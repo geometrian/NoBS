@@ -1,69 +1,23 @@
-import os,sys; sys.path.append("../../")
+import os, sys
 import shutil
 import subprocess
 import tarfile
 
+sys.path.append("../")
 import nobs
 
+from __helpers import *
 
-system_dir = "C:/dev/Python Projects/Prebuilt and Programming Utilities/NoBS/nobs-sys/files-for-projects/TestSystemDir/"
-##system_dir = "C:/Program Files (x86)/Windows Kits/10/"
 
-#http://stackoverflow.com/a/28382515/688624
-#if sys.platform == "win32":
-#	def symlink_ms(source, link):
-#		if not os.path.isabs(source): source=os.path.join(os.getcwd(),source)
-#		if not os.path.isabs(link  ): link  =os.path.join(os.getcwd(),link  )
-#		orig_cwd = os.getcwd() + "/"
-#		if os.path.isdir(source):
-#			os.chdir(link+"../")
-#			link = os.path.basename(link[:-1])
-#			source = source[:-1]
-###            print("  CWD: \"%s\""%os.getcwd())
-###            print("  link (dir): \"%s\""%link)
-###            print("  src  (dir): \"%s\""%source)
-#			nobs.run_subproc("mklink /D \"%s\" \"%s\""%(link.replace("/","\\"),source.replace("/","\\")),False)
-#		else:
-#			os.chdir(os.path.dirname(link))
-#			link = os.path.basename(link)
-###            print("  CWD: \"%s\""%os.getcwd())
-###            print("  link (file): \"%s\""%link)
-###            print("  src  (file): \"%s\""%source)
-#			nobs.run_subproc("mklink \"%s\" \"%s\""%(link.replace("/","\\"),source.replace("/","\\")),False)
-#		os.chdir(orig_cwd)
-#	os.symlink = symlink_ms
+def setup_target(modulename):
+	module = __import__("_"+modulename)
 
-def replace_file_if_hashmatch_or_fail(relpath, req_orig_hash, new_contents):
-	if nobs.get_file_hash(relpath) == req_orig_hash:
-		file = open(relpath,"wb")
-		file.write(new_contents)
-		file.close()
-	else:
-		raise Exception("Could not update file contents; file has changed!  Update \"%s\"."%__file__)
-
-def safe_create_dir(path):
-	if os.path.isdir(path) and not dir_is_empty(path):
-		reply = nobs.strinput("Directory \"%s\" already exists!  Should I delete it (y/n)?  "%path)
-		if reply == "y":
-			shutil.rmtree(path)
-		else:
-			print("Abort."); sys.exit()
-		nobs.Directory(path)
-		print("  Recreated \"%s\""%path)
-	else:
-		nobs.Directory(path)
-		print("  Created \"%s\""%path)
-
-def dir_is_empty(path):
-	return len(os.listdir(path)) == 0
-
-def setup_dependency(get_filename_dep,prepare_dep,nobs_generate_dep):
 	orig_cwd = os.getcwd()
 
 	#Parse dependency's website to get file
 	print("Parsing the dependency's website to get file information.")
 	try:
-		dt, urlprefix, name, verstr, filename = get_filename_dep()
+		dt, urlprefix, name, verstr, filename = module.get_filename()
 		#dt, urlprefix, name, verstr, filename = 0.0, "http://zlib.net/", "zlib", "1.2.11", "zlib-1.2.11.tar.gz"
 	except Exception as e:
 		print("  Parse failed: \"%s\""%e)
@@ -74,7 +28,8 @@ def setup_dependency(get_filename_dep,prepare_dep,nobs_generate_dep):
 
 	#Create directories
 	print("Creating directories.")
-	os.chdir(system_dir)
+	nobs.Directory(NOBS_SYS_DIR)
+	os.chdir(NOBS_SYS_DIR)
 	safe_create_dir("Include/user/"+   vername+"/")
 	safe_create_dir(    "Lib/user/"+   vername+"/")
 	safe_create_dir( "Source/user/"+   vername+"/")
@@ -99,17 +54,18 @@ def setup_dependency(get_filename_dep,prepare_dep,nobs_generate_dep):
 	#Prepare dependency for build
 	print("Preparing dependency for build.")
 	os.chdir(vername+"/")
-	prepare_dep()
+	module.additional_project_setup_fromrootdir()
 
 	#Generate build files with NoBS
 	print("Generating build files.")
-	prj = nobs_generate_dep(vername)
+	prj, targets = module.get_system_projecttargets_fromrootdir()
+	prj.generate()
 
 	#Build dependency
 	print("Building dependency.")
 	os.chdir(".nobs/.ides/")
 	msbuild = "\"C:/Program Files (x86)/Microsoft Visual Studio/2017/Community/MSBuild/15.0/Bin/MSBuild.exe\""
-	cmd1 = "%s %s.sln /nologo /verbosity:minimal /maxcpucount:8" % (msbuild,vername)
+	cmd1 = "%s %s.sln /nologo /verbosity:minimal /maxcpucount:8" % (msbuild,name)
 	for gen in prj.generators:
 		if gen.isVisualStudioGenerator():
 			for config in gen.configurations:
@@ -124,7 +80,7 @@ def setup_dependency(get_filename_dep,prepare_dep,nobs_generate_dep):
 	for target in prj.targets:
 		for header in target.exported.headers_list:
 			src = nobs.reslash(header.abspath)
-			prefix = system_dir + "Source/user/"+vername+"/"
+			prefix = NOBS_SYS_DIR + "Source/user/"+vername+"/"
 			assert src.startswith(prefix)
 			subpath = src[len(prefix):]
 			nobs.overwrite_symlink(
@@ -139,7 +95,7 @@ def setup_dependency(get_filename_dep,prepare_dep,nobs_generate_dep):
 			for config in gen.configurations:
 				nobs.Directory("Lib/user/"+vername+"/"+config.name_build+"/")
 				nobs.overwrite_symlink(
-					"Source/user/"+vername+"/.nobs/.build/"+config.name_build+"/"+vername+".lib",
+					"Source/user/"+vername+"/.nobs/.build/"+config.name_build+"/"+name+".lib",
 					"Lib/user/"+vername+"/"+config.name_build+"/"+name+".lib",
 					2
 				)
@@ -152,3 +108,23 @@ def setup_dependency(get_filename_dep,prepare_dep,nobs_generate_dep):
 
 	#Done
 	print("Done!")
+
+def setup_targets_all():
+	selfdir = os.path.dirname(__file__)
+
+	modules = []
+	for filename in os.listdir(selfdir):
+		if filename.startswith("_") and not filename.startswith("__"):
+			modules.append(os.path.splitext(filename)[0][1:])
+
+	for modulename in modules:
+		setup_target(modulename)
+def setup_targets_named():
+	#setup_target("zlib")
+	setup_target("libpng")
+
+def main():
+	#setup_targets_all()
+	setup_targets_named()
+
+if __name__ == "__main__": main()

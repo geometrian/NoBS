@@ -27,13 +27,16 @@
     <Content Include="example\mylib\subdir\cube.cpp" />
     <Content Include="example\mylib\subdir\cube.hpp" />
     <Content Include="instructions.md" />
-    <Content Include="nobs-sys\system.md" />
     <Content Include="README.md" />
+    <Content Include="system.md" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="example\nobs-example.py" />
-    <Compile Include="nobs-sys\files-for-projects\dependency.py" />
-    <Compile Include="nobs-sys\files-for-projects\zlib.py" />
+    <Compile Include="nobs\sys\setup-target.py" />
+    <Compile Include="nobs\sys\_libpng.py" />
+    <Compile Include="nobs\sys\_zlib.py" />
+    <Compile Include="nobs\sys\__helpers.py" />
+    <Compile Include="nobs\sys\__init__.py" />
     <Compile Include="nobs\_architecture.py" />
     <Compile Include="nobs\_build_options.py" />
     <Compile Include="nobs\_configuration.py" />
@@ -54,8 +57,7 @@
     <Folder Include="example\mylib\" />
     <Folder Include="example\mylib\subdir\" />
     <Folder Include="nobs" />
-    <Folder Include="nobs-sys" />
-    <Folder Include="nobs-sys\files-for-projects" />
+    <Folder Include="nobs\sys\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>
