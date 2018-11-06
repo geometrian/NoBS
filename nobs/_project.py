@@ -1,36 +1,40 @@
 from ._file import Directory
+from ._helpers import _errorinstance,_warning
 from ._target import _TargetUserBase
 
 
 class Project(object):
-    def __init__(self, name, build_result_dir,build_temp_dir,build_files_dir):
-        if not isinstance(name,str): raise Exception("Project name must be a string!")
-        self.name = name
+	def __init__(self,
+		name,
+		directory_project_root,
+		directory_build_result,
+		directory_build_temporary,
+		directory_project_files
+	):
+		if not isinstance(name,str):
+			_errorinstance("Project name",str)
+		self.name = name
 
-        if not isinstance(build_result_dir,Directory): raise Exception("Build result directory must be an instance of \"nobs.Directory\"!")
-        self.build_result_directory    = build_result_dir
-        if not isinstance(build_temp_dir,Directory): raise Exception("Build temporary directory must be an instance of \"nobs.Directory\"!")
-        self.build_temporary_directory = build_temp_dir
-        if not isinstance(build_files_dir,Directory): raise Exception("Build files directory must be an instance of \"nobs.Directory\"!")
-        self.build_files_directory     = build_files_dir
+		if not isinstance(directory_project_root,   Directory):
+			_errorinstance("Project root directory",     Directory)
+		if not isinstance(directory_build_result,   Directory):
+			_errorinstance("Build result directory",     Directory)
+		if not isinstance(directory_build_temporary,Directory):
+			_errorinstance("Build temporaries directory",Directory)
+		if not isinstance(directory_project_files,  Directory):
+			_errorinstance("Project files directory",    Directory)
+		self.directory_project_root    = directory_project_root
+		self.directory_build_result    = directory_build_result
+		self.directory_build_temporary = directory_build_temporary
+		self.directory_project_files   = directory_project_files
 
-        self.targets = []
+		self.targets = []
 
-        self.generators = set()
+		self.generators = set()
 
-##    def _add_target(self, target):
-##        if not isinstance(target,_TargetUserBase):
-##            raise Exception("Target must be an instance of one of { \"nobs.TargetStaticLibrary\", \"nobs.TargetDynamicLibrary\", \"nobs.TargetExecutable\" }!")
-##        self.targets.append(target)
+	def generate(self):
+		if len(self.generators) == 0:
+			_warning("No generators added to project; no output will be made.")
 
-##    def _validate(self):
-##        for gen in self.generators:
-##            gen._validate()
-##        for target in self.targets:
-##            target._validate()
-
-    def generate(self):
-##        self._validate()
-
-        for generator in self.generators:
-            generator.generate() 
+		for generator in self.generators:
+			generator.generate()
